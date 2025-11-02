@@ -1,8 +1,9 @@
 #include "Camera.h"
+#include "SolarSystem.h"
 #include <GLFW/glfw3.h>
 #include <cmath>
 
-void setupCamera(const Camera& camera, int width, int height) {
+void setupCamera(const Camera& camera, int width, int height, const SolarSystem& solarSystem) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
@@ -28,12 +29,21 @@ void setupCamera(const Camera& camera, int width, int height) {
 
 	glTranslated(-camera.posX, -camera.posY, -camera.posZ);
 
-	glScaled(camera.zoom, camera.zoom, camera.zoom);
+	if (camera.freeZoomMode) {
+		glScaled(camera.zoom, camera.zoom, camera.zoom);
+	} else {
+		glTranslated(solarSystem.centerX, solarSystem.centerY, solarSystem.centerZ);
+		glScaled(camera.zoom, camera.zoom, camera.zoom);
+		glTranslated(-solarSystem.centerX, -solarSystem.centerY, -solarSystem.centerZ);
+	}
 }
 
 void processInput(GLFWwindow* window, Camera& camera) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+
+	double speedMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? 2.0 : 1.0;
+	double currentSpeed = camera.moveSpeed * speedMultiplier;
 
 	double forward[3] = {
 		-sin(camera.yaw),
@@ -48,31 +58,28 @@ void processInput(GLFWwindow* window, Camera& camera) {
 	};
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		camera.posX += forward[0] * camera.moveSpeed;
-		camera.posZ += forward[2] * camera.moveSpeed;
+		camera.posX += forward[0] * currentSpeed;
+		camera.posZ += forward[2] * currentSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		camera.posX -= forward[0] * camera.moveSpeed;
-		camera.posZ -= forward[2] * camera.moveSpeed;
+		camera.posX -= forward[0] * currentSpeed;
+		camera.posZ -= forward[2] * currentSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		camera.posX -= right[0] * camera.moveSpeed;
-		camera.posZ -= right[2] * camera.moveSpeed;
+		camera.posX -= right[0] * currentSpeed;
+		camera.posZ -= right[2] * currentSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		camera.posX += right[0] * camera.moveSpeed;
-		camera.posZ += right[2] * camera.moveSpeed;
+		camera.posX += right[0] * currentSpeed;
+		camera.posZ += right[2] * currentSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		camera.posY += camera.moveSpeed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-		camera.posY -= camera.moveSpeed;
+		camera.posY += currentSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-		camera.posY += camera.moveSpeed;
+		camera.posY += currentSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		camera.posY -= camera.moveSpeed;
+		camera.posY -= currentSpeed;
 	}
 }

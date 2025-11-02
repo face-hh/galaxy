@@ -38,9 +38,22 @@ void mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
 	if (!g_camera) return;
 
-	g_camera->zoom *= (1.0 - yoffset * 0.1);
-	if (g_camera->zoom < 0.001) g_camera->zoom = 0.001;
-	if (g_camera->zoom > 1000.0) g_camera->zoom = 1000.0;
+	bool ctrlHeld = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+	                glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+	g_camera->freeZoomMode = ctrlHeld;
+
+	double zoomFactor = 1.15;
+
+	if (yoffset > 0) {
+		g_camera->zoomLevel *= zoomFactor;
+	} else {
+		g_camera->zoomLevel /= zoomFactor;
+	}
+
+	if (g_camera->zoomLevel < 0.0001) g_camera->zoomLevel = 0.0001;
+	if (g_camera->zoomLevel > 10000.0) g_camera->zoomLevel = 10000.0;
+
+	g_camera->zoom = g_camera->zoomLevel;
 }
 
 void initInput(GLFWwindow* window, Camera& camera, MouseState& mouseState) {

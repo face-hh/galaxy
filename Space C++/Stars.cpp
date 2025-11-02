@@ -1,4 +1,5 @@
 ﻿#include "Stars.h"
+#include "SolarSystem.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
@@ -262,12 +263,14 @@ void updateStarPositions(std::vector<Star>& stars, double deltaTime) {
 	}
 }
 
-void renderStars(const std::vector<Star>& stars) {
+void renderStars(const std::vector<Star>& stars, const RenderZone& zone) {
 	glPointSize(2.0f);
 	glBegin(GL_POINTS);
 
 	for (const auto& star : stars) {
-		glColor3f(star.r * star.brightness, star.g * star.brightness, star.b * star.brightness);
+		glColor3f(star.r * star.brightness,
+		          star.g * star.brightness,
+		          star.b * star.brightness);
 		glVertex3f(star.x, star.y, star.z);
 	}
 

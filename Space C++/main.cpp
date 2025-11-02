@@ -1,8 +1,11 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <random>
+#include <ctime>
 #include "Window.h"
 #include "Camera.h"
 #include "Stars.h"
+#include "SolarSystem.h"
 #include "Input.h"
 
 // Configuration
@@ -20,19 +23,34 @@ GalaxyConfig createDefaultGalaxyConfig() {
 	config.diskHeight = 50.0;
 	config.bulgeHeight = 100.0;
 	config.armDensityBoost = 10.0;
-	config.seed = 42;
+
+	std::random_device rd;
+	config.seed = rd();
+
 	config.rotationSpeed = 1.0;
+
+	std::cout << "Galaxy seed: " << config.seed << std::endl;
+
 	return config;
 }
 
 void render(const std::vector<Star>& stars, const Camera& camera) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	setupCamera(camera, WIDTH, HEIGHT);
-	renderStars(stars);
+	setupCamera(camera, WIDTH, HEIGHT, solarSystem);
+
+	RenderZone zone = calculateRenderZone(camera);
+
+	renderStars(stars, zone);
+
+	if (solarSystem.isGenerated) {
+		renderSolarSystem(zone);
+	}
 }
 
 int main() {
+	srand(static_cast<unsigned int>(time(nullptr)));
+
 	WindowConfig windowConfig = { WIDTH, HEIGHT, "untitled Galaxy sim" };
 	GLFWwindow* window = initWindow(windowConfig);
 	if (!window) {
@@ -42,6 +60,11 @@ int main() {
 	setupOpenGL();
 
 	Camera camera;
+	camera.posY = 200.0;
+	camera.pitch = -0.2;
+	camera.zoomLevel = 0.001;
+	camera.zoom = camera.zoomLevel;
+
 	MouseState mouseState = { WIDTH / 2.0, HEIGHT / 2.0, true };
 
 	initInput(window, camera, mouseState);
@@ -50,6 +73,8 @@ int main() {
 	GalaxyConfig galaxyConfig = createDefaultGalaxyConfig();
 	std::vector<Star> stars;
 	generateStarField(stars, galaxyConfig);
+
+	generateSolarSystem();
 
 	double lastTime = glfwGetTime();
 
@@ -60,6 +85,7 @@ int main() {
 		lastTime = currentTime;
 
 		updateStarPositions(stars, deltaTime);
+		updatePlanets(deltaTime);
 
 		processInput(window, camera);
 		render(stars, camera);

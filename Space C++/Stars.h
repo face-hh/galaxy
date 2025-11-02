@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 
+struct RenderZone;
+
 struct Star {
 	float x, y, z;
 	float r, g, b;
@@ -29,4 +31,4 @@ struct GalaxyConfig {
 
 void generateStarField(std::vector<Star>& stars, const GalaxyConfig& config);
 void updateStarPositions(std::vector<Star>& stars, double deltaTime);
-void renderStars(const std::vector<Star>& stars);
+void renderStars(const std::vector<Star>& stars, const RenderZone& zone);

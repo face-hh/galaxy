@@ -130,12 +130,14 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SolarSystem.cpp" />
     <ClCompile Include="Stars.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="SolarSystem.h" />
     <ClInclude Include="Stars.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
