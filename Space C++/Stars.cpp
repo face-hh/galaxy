@@ -73,8 +73,9 @@ void generateStarField(std::vector<Star>& stars, const GalaxyConfig& config) {
 				for (int it = 0; it < 10; ++it) {
 					float t = r / diskScale;
 					float expNegT = std::exp(-t);
-					float F = 1.0f - (1.0f + t) * expNegT;          // F(r)
-					float G = F - u;                               // want G == 0
+					float F = 1.0f - (1.0f + t) * expNegT;        // F(r)
+					float G = F - u;							  // want G == 0
+
 					if (std::fabs(G) < 1e-6f) break;
 					// dF/dr = (r / rd^2) * exp(-r/rd)
 					float dFdr = (r == 0.0f) ? (1.0f / (diskScale)) * 0.0f : (r / (diskScale * diskScale)) * expNegT;
@@ -90,8 +91,10 @@ void generateStarField(std::vector<Star>& stars, const GalaxyConfig& config) {
 			float diskScale = static_cast<float>(config.diskRadius) * 0.25f; // tune to taste
 			float radius = sampleExponentialDiskRadius(diskScale);
 
-			// Clip at diskRadius
-			if (radius > static_cast<float>(config.diskRadius)) radius = static_cast<float>(config.diskRadius);
+			float maxRadius = static_cast<float>(config.diskRadius) * 2.0f; // allow 2x radius to allow stars beyond diskRadius to fade out (not creating an uniform circle)
+			if (radius > maxRadius) {
+				radius = maxRadius;
+			}
 
 			// Base angle
 			float theta = dist(rng) * 2.0f * M_PI;
@@ -117,18 +120,54 @@ void generateStarField(std::vector<Star>& stars, const GalaxyConfig& config) {
 				minArmDistance = fmin(minArmDistance, armDistance);
 			}
 
+			float radiusNorm = radius / static_cast<float>(config.diskRadius);
+			float edgeFactor = (radiusNorm > 1.0f) ? 1.0f : radiusNorm; // Clamp for calculation
+			float effectiveArmWidth = config.armWidth * (1.0f + edgeFactor * 1.5f); // Arms get wider towards edges
+
 			// Stars close to arms have high probability, far from arms very low
-			float armProximity = exp(-minArmDistance * minArmDistance / (config.armWidth * config.armWidth));
+			float armProximity = exp(-minArmDistance * minArmDistance / (effectiveArmWidth * effectiveArmWidth));
 
-			// Non-linear density weight - creates sharper contrast
-			float densityWeight = armProximity * config.armDensityBoost;
+			float acceptProbability;
+			if (radius > config.diskRadius) {
+				// we over the disk radius, this is the outlier region
+				// split into multiple zones for smoother transition
+				float excessRadius = radius - config.diskRadius;
+				float fadeScale = config.diskRadius * 0.15f;
+				
+				float outlierFactor = exp(-excessRadius / fadeScale);
+				
+				// quadratic suppression for extreme outliers
+				if (radiusNorm > 1.3f) {
+					float extremeFactor = 1.3f / radiusNorm;
+					outlierFactor *= extremeFactor * extremeFactor;
+				}
+				
+				// 8% of normal density
+				acceptProbability = outlierFactor * 0.08f;
+			}
+			else if (radius > config.diskRadius * 0.85f) {
+				// Transition zone (85% - 100% of diskRadius) with gradual fadeout
+				float transitionFactor = (config.diskRadius - radius) / (config.diskRadius * 0.15f);
+				transitionFactor = 0.5f + 0.5f * transitionFactor;
+				
+				float densityWeight = armProximity * config.armDensityBoost;
+				acceptProbability = (1.0f + densityWeight) / (1.0f + config.armDensityBoost);
 
-			// Reject stars not near arms much more aggressively
-			float acceptProbability = (1.0f + densityWeight) / (1.0f + config.armDensityBoost);
+				// 80% rejection for inter-arm regions
+				if (armProximity < 0.3f) {
+					acceptProbability *= 0.2f;
+				}
+				
+				acceptProbability *= transitionFactor;
+			}
+			else {
+				float densityWeight = armProximity * config.armDensityBoost;
+				acceptProbability = (1.0f + densityWeight) / (1.0f + config.armDensityBoost);
 
-			// Add extra rejection for stars far from arms
-			if (armProximity < 0.3f) {
-				acceptProbability *= 0.2f;// 80% rejection for inter-arm regions
+				// 80% rejection for inter-arm regions
+				if (armProximity < 0.3f) {
+					acceptProbability *= 0.2f;
+				}
 			}
 
 			if (dist(rng) > acceptProbability) {
@@ -136,29 +175,31 @@ void generateStarField(std::vector<Star>& stars, const GalaxyConfig& config) {
 				continue;
 			}
 
-			// Add some noise to position for more natural look (LESS noise for clearer arms)
-			float noise = normalDist(rng) * 15.0f;  // Reduced from 30.0f
+			// positional noise for irregular edges
+			float noiseScale = 15.0f * (1.0f + radiusNorm * 0.8f);
+			float noise = normalDist(rng) * noiseScale;
 
-			star.x = (radius + noise * 0.3f) * cos(theta);
-			star.z = (radius + noise * 0.3f) * sin(theta);
+			// radial scatter at edges
+			float radialScatter = normalDist(rng) * 20.0f * radiusNorm * radiusNorm;
+			
+			star.x = (radius + noise * 0.3f + radialScatter) * cos(theta);
+			star.z = (radius + noise * 0.3f + radialScatter) * sin(theta);
 
-			// Y position - disk height with Gaussian distribution
-			// use normalized radius fraction for height tapering
-			float radiusNorm = radius / static_cast<float>(config.diskRadius);
-			float heightScale = config.diskHeight * (1.0f - radiusNorm * 0.5f);  // Thinner at edges
+			// Y position (disk height with Gaussian distribution)
+			float heightScale = config.diskHeight * (1.0f - edgeFactor * 0.5f);
 			star.y = normalDist(rng) * heightScale;
 
-			// Rotation for disk stars - differential rotation (Keplerian-like)
+			// rotation for disk stars
 			star.radius = radius;
 			star.angle = theta;
-			// Outer stars rotate slower (like real galaxies)
+			// outer stars rotate slower
 			star.angularVelocity = config.rotationSpeed * 1.0f / (sqrt(radius / config.bulgeRadius) * (radius + 1.0f));
 		}
 
-		// Select star type based on probability
+		// select star type
 		float typeRoll = dist(rng);
 		float cumulative = 0.0f;
-		int selectedType = 6;  // Default to M type
+		int selectedType = 6; // default M type
 
 		for (int t = 0; t < 7; t++) {
 			cumulative += starTypes[t].probability;
@@ -172,29 +213,32 @@ void generateStarField(std::vector<Star>& stars, const GalaxyConfig& config) {
 		star.g = starTypes[selectedType].g;
 		star.b = starTypes[selectedType].b;
 
-		// Random brightness variation
-		// Stars in bulge tend to be older/redder/dimmer
+		// stars in bulge tend to be older
 		float distFromCenter = sqrt(star.x * star.x + star.y * star.y + star.z * star.z);
 		if (distFromCenter < config.bulgeRadius) {
-			star.brightness = 0.4f + dist(rng) * 0.4f;  // Dimmer bulge stars
+			star.brightness = 0.4f + dist(rng) * 0.4f; // dim
 		}
 		else {
-			star.brightness = 0.3f + dist(rng) * 0.7f;  // Brighter disk stars
+			star.brightness = 0.3f + dist(rng) * 0.7f; // bright
 
-			// Stars in spiral arms are brighter (young, hot stars)
-			// This will make arms even more visible!
+			// stars in spiral arms are brighter
 			float minArmDist = 1e10f;
+
 			for (int arm = 0; arm < config.numSpiralArms; arm++) {
 				float armOffset = (arm * 2.0f * M_PI) / config.numSpiralArms;
 				float spiralTheta = log(star.radius / config.bulgeRadius) / config.spiralTightness + armOffset;
 				float angleDiff = star.angle - spiralTheta;
+
 				while (angleDiff > M_PI) angleDiff -= 2.0f * M_PI;
 				while (angleDiff < -M_PI) angleDiff += 2.0f * M_PI;
+
 				float armDist = fabs(angleDiff * star.radius);
+
 				minArmDist = fmin(minArmDist, armDist);
 			}
 			float armBrightness = exp(-minArmDist * minArmDist / (config.armWidth * config.armWidth * 4.0f));
-			star.brightness += armBrightness * 0.3f; // Up to 30% brighter in arms
+
+			star.brightness += armBrightness * 0.3f;
 			if (star.brightness > 1.0f) star.brightness = 1.0f;
 		}
 
@@ -203,15 +247,14 @@ void generateStarField(std::vector<Star>& stars, const GalaxyConfig& config) {
 }
 
 void updateStarPositions(std::vector<Star>& stars, double deltaTime) {
-	// Update each star's position based on its angular velocity
 	for (auto& star : stars) {
 		star.angle += star.angularVelocity * deltaTime;
 
-		// Normalize angle to [0, 2*PI]
+		// normalize angle to [0, 2*PI]
 		while (star.angle > 2.0f * M_PI) star.angle -= 2.0f * M_PI;
 		while (star.angle < 0.0f) star.angle += 2.0f * M_PI;
 
-		// Recalculate X and Z based on new angle (Y stays the same)
+		// recalc X and Z based on new angle
 		float oldY = star.y;
 		star.x = star.radius * cos(star.angle);
 		star.z = star.radius * sin(star.angle);
