@@ -6,11 +6,12 @@
 #include "Camera.h"
 #include "Stars.h"
 #include "SolarSystem.h"
+#include "BlackHole.h"
+#include "GalacticGas.h"
 #include "Input.h"
 
-// Configuration
-const int WIDTH = 1920;
-const int HEIGHT = 1080;
+int WIDTH = 1920;
+int HEIGHT = 1080;
 
 GalaxyConfig createDefaultGalaxyConfig() {
 	GalaxyConfig config;
@@ -34,7 +35,17 @@ GalaxyConfig createDefaultGalaxyConfig() {
 	return config;
 }
 
-void render(const std::vector<Star>& stars, const Camera& camera) {
+BlackHoleConfig createDefaultBlackHoleConfig() {
+	BlackHoleConfig config;
+	config.enableSupermassive = true;
+	config.numStellarBlackHoles = 0;
+	config.stellarBlackHoleFraction = 0.0f;
+
+	return config;
+}
+
+void render(const std::vector<Star>& stars, const std::vector<BlackHole>& blackHoles,
+            const std::vector<GasCloud>& gasClouds, const Camera& camera) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	setupCamera(camera, WIDTH, HEIGHT, solarSystem);
@@ -42,6 +53,9 @@ void render(const std::vector<Star>& stars, const Camera& camera) {
 	RenderZone zone = calculateRenderZone(camera);
 
 	renderStars(stars, zone);
+
+	renderGalacticGas(gasClouds, zone);
+	renderBlackHoles(blackHoles, zone);
 
 	if (solarSystem.isGenerated) {
 		renderSolarSystem(zone);
@@ -74,6 +88,16 @@ int main() {
 	std::vector<Star> stars;
 	generateStarField(stars, galaxyConfig);
 
+	BlackHoleConfig blackHoleConfig = createDefaultBlackHoleConfig();
+	std::vector<BlackHole> blackHoles;
+	generateBlackHoles(blackHoles, blackHoleConfig, galaxyConfig.seed,
+	                   galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
+
+	GasConfig gasConfig = createDefaultGasConfig();
+	std::vector<GasCloud> gasClouds;
+	generateGalacticGas(gasClouds, gasConfig, galaxyConfig.seed,
+	                    galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
+
 	generateSolarSystem();
 
 	double lastTime = glfwGetTime();
@@ -85,10 +109,12 @@ int main() {
 		lastTime = currentTime;
 
 		updateStarPositions(stars, deltaTime);
+		updateBlackHoles(blackHoles, deltaTime);
+		updateGalacticGas(gasClouds, deltaTime);
 		updatePlanets(deltaTime);
 
 		processInput(window, camera);
-		render(stars, camera);
+		render(stars, blackHoles, gasClouds, camera);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

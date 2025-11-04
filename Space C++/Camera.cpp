@@ -30,11 +30,11 @@ void setupCamera(const Camera& camera, int width, int height, const SolarSystem&
 	glTranslated(-camera.posX, -camera.posY, -camera.posZ);
 
 	if (camera.freeZoomMode) {
-		glScaled(camera.zoom, camera.zoom, camera.zoom);
-	} else {
 		glTranslated(solarSystem.centerX, solarSystem.centerY, solarSystem.centerZ);
 		glScaled(camera.zoom, camera.zoom, camera.zoom);
 		glTranslated(-solarSystem.centerX, -solarSystem.centerY, -solarSystem.centerZ);
+	} else {
+		glScaled(camera.zoom, camera.zoom, camera.zoom);
 	}
 }
 

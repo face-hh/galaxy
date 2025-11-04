@@ -1,6 +1,7 @@
 #include "Input.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <random>
 
 static Camera* g_camera = nullptr;
 static MouseState* g_mouseState = nullptr;
@@ -56,6 +57,11 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
 	g_camera->zoom = g_camera->zoomLevel;
 }
 
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (!g_camera) return;
+	if (action != GLFW_PRESS) return;
+}
+
 void initInput(GLFWwindow* window, Camera& camera, MouseState& mouseState) {
 	setGlobalCamera(&camera);
 	setGlobalMouseState(&mouseState);
@@ -63,4 +69,5 @@ void initInput(GLFWwindow* window, Camera& camera, MouseState& mouseState) {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouseMoveCallback);
 	glfwSetScrollCallback(window, scrollCallback);
+	glfwSetKeyCallback(window, keyCallback);
 }

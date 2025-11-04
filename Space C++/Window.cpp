@@ -2,6 +2,13 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+	WIDTH = width;
+	HEIGHT = height;
+
+	glViewport(0, 0, width, height);
+}
+
 GLFWwindow* initWindow(const WindowConfig& config) {
 	if (!glfwInit()) {
 		std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -16,6 +23,9 @@ GLFWwindow* initWindow(const WindowConfig& config) {
 	}
 
 	glfwMakeContextCurrent(window);
+
+	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	glViewport(0, 0, config.width, config.height);
 
 	return window;
 }
