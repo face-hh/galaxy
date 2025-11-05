@@ -427,16 +427,44 @@ void renderBlackHoles(const std::vector<BlackHole>& blackHoles, const RenderZone
 
         float shadowRadius = bh.eventHorizonRadius * visualScale * 2.5f;
 
-        for (int i = 0; i < 5; i++) {
-            float size = shadowRadius * (1.0f - (float)i * 0.15f);
-            float alpha = 0.95f / (1.0f + (float)i);
+        int latSegments, lonSegments;
+        if (highQuality) {
+            latSegments = 24;
+            lonSegments = 32;
+        } else if (mediumQuality) {
+            latSegments = 16;
+            lonSegments = 24;
+        } else {
+            latSegments = 12;
+            lonSegments = 16;
+        }
 
-            glPointSize(size);
-            glBegin(GL_POINTS);
-            glColor4f(0.0f, 0.0f, 0.0f, alpha);
-            glVertex3f(0.0f, 0.0f, 0.0f);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+
+        for (int lat = 0; lat < latSegments; lat++) {
+            float theta1 = lat * M_PI / latSegments;
+            float theta2 = (lat + 1) * M_PI / latSegments;
+
+            glBegin(GL_QUAD_STRIP);
+            for (int lon = 0; lon <= lonSegments; lon++) {
+                float phi = lon * 2.0f * M_PI / lonSegments;
+
+                float x1 = shadowRadius * sin(theta1) * cos(phi);
+                float y1 = shadowRadius * cos(theta1);
+                float z1 = shadowRadius * sin(theta1) * sin(phi);
+
+                float x2 = shadowRadius * sin(theta2) * cos(phi);
+                float y2 = shadowRadius * cos(theta2);
+                float z2 = shadowRadius * sin(theta2) * sin(phi);
+
+                glVertex3f(x1, y1, z1);
+                glVertex3f(x2, y2, z2);
+            }
             glEnd();
         }
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
         int numGlowLayers;
         if (highQuality) {
