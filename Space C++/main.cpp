@@ -38,8 +38,6 @@ GalaxyConfig createDefaultGalaxyConfig() {
 BlackHoleConfig createDefaultBlackHoleConfig() {
 	BlackHoleConfig config;
 	config.enableSupermassive = true;
-	config.numStellarBlackHoles = 0;
-	config.stellarBlackHoleFraction = 0.0f;
 
 	return config;
 }

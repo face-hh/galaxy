@@ -3,33 +3,20 @@
 
 struct RenderZone;
 
-enum class BlackHoleType {
-    SUPERMASSIVE,
-    STELLAR
-};
-
 struct BlackHole {
-    float x, y, z;
-    BlackHoleType type;
+	float x, y, z;
 
-    float mass;
-    float eventHorizonRadius;
-    float accretionDiskInnerRadius;
-    float accretionDiskOuterRadius;
-    bool hasAccretionDisk;
+	float mass;
+	float eventHorizonRadius;
+	float accretionDiskInnerRadius;
+	float accretionDiskOuterRadius;
 
-    float diskRotationAngle;
-    float diskRotationSpeed;
-
-    float radius;
-    float angle;
-    float angularVelocity;
+	float diskRotationAngle;
+	float diskRotationSpeed;
 };
 
 struct BlackHoleConfig {
-    bool enableSupermassive;
-    int numStellarBlackHoles;
-    float stellarBlackHoleFraction;
+	bool enableSupermassive;
 };
 
 void generateBlackHoles(std::vector<BlackHole>& blackHoles, const BlackHoleConfig& config, unsigned int seed, double diskRadius, double bulgeRadius);
@@ -41,5 +28,6 @@ const double SPEED_OF_LIGHT = 2.998e8;
 const double GRAVITATIONAL_CONSTANT = 6.674e-11;
 
 inline float calculateSchwarzschildRadius(float solarMasses) {
-    return 2.95f * solarMasses;
+	return 2.95f * solarMasses;
 }
+	
