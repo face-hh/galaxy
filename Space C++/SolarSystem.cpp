@@ -109,6 +109,33 @@ void updatePlanets(double deltaTime)
     }
 }
 
+void drawSphere(float radius, int segments)
+{
+    for (int lat = 0; lat < segments; lat++)
+    {
+        float theta1 = lat * M_PI / segments;
+        float theta2 = (lat + 1) * M_PI / segments;
+
+        glBegin(GL_QUAD_STRIP);
+        for (int lon = 0; lon <= segments; lon++)
+        {
+            float phi = lon * 2 * M_PI / segments;
+
+            float x1 = radius * sin(theta1) * cos(phi);
+            float y1 = radius * cos(theta1);
+            float z1 = radius * sin(theta1) * sin(phi);
+
+            float x2 = radius * sin(theta2) * cos(phi);
+            float y2 = radius * cos(theta2);
+            float z2 = radius * sin(theta2) * sin(phi);
+
+            glVertex3f(x1, y1, z1);
+            glVertex3f(x2, y2, z2);
+        }
+        glEnd();
+    }
+}
+
 void renderSolarSystem(const RenderZone &zone)
 {
     double scale = zone.solarSystemScaleMultiplier;
@@ -117,23 +144,20 @@ void renderSolarSystem(const RenderZone &zone)
     glTranslated(sun.x, sun.y, sun.z);
     glScaled(scale, scale, scale);
 
-    float sunSize = 8.0f;
+    float sunRadius = 0.01f;
     if (zone.zoomLevel > 1000.0)
-        sunSize = 40.0f;
+        sunRadius = 0.05f;
     else if (zone.zoomLevel > 500.0)
-        sunSize = 35.0f;
+        sunRadius = 0.04f;
     else if (zone.zoomLevel > 100.0)
-        sunSize = 25.0f;
+        sunRadius = 0.03f;
     else if (zone.zoomLevel > 10.0)
-        sunSize = 15.0f;
+        sunRadius = 0.02f;
     else if (zone.zoomLevel > 1.0)
-        sunSize = 12.0f;
+        sunRadius = 0.015f;
 
-    glPointSize(sunSize);
-    glBegin(GL_POINTS);
     glColor3f(1.0f, 1.0f, 0.3f);
-    glVertex3f(0, 0, 0);
-    glEnd();
+    drawSphere(sunRadius / scale, 16);
     glPopMatrix();
 
     for (const auto &planet : planets)
@@ -147,23 +171,20 @@ void renderSolarSystem(const RenderZone &zone)
         double relZ = (planet.z - sun.z) / scale;
         glTranslated(relX, relY, relZ);
 
-        float size = 2.0f;
+        float planetRadius = 0.002f;
         if (zone.zoomLevel > 1000.0)
-            size = 20.0f;
+            planetRadius = 0.003f;
         else if (zone.zoomLevel > 500.0)
-            size = 18.0f;
+            planetRadius = 0.003f;
         else if (zone.zoomLevel > 100.0)
-            size = 12.0f;
+            planetRadius = 0.0025f;
         else if (zone.zoomLevel > 50.0)
-            size = 8.0f;
+            planetRadius = 0.002f;
         else if (zone.zoomLevel > 10.0)
-            size = 5.0f;
+            planetRadius = 0.002f;
 
-        glPointSize(size);
-        glBegin(GL_POINTS);
         glColor3f(planet.r, planet.g, planet.b);
-        glVertex3f(0, 0, 0);
-        glEnd();
+        drawSphere(planetRadius / scale, 12);
         glPopMatrix();
 
         if (zone.renderOrbits)
