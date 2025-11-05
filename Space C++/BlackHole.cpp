@@ -209,30 +209,42 @@ void renderBlackHoles(const std::vector<BlackHole>& blackHoles, const RenderZone
 
                     auto getColor = [](float t) -> Color3 {
                         Color3 color;
-                        if (t < 0.15f) {
-                            color.r = 0.85f;
-                            color.g = 0.92f;
+                        // intense blue and violet since its extremely hot and near event horizon
+                        if (t < 0.12f) {
+                            // blue-violet
+                            color.r = 0.4f + t * 2.0f;
+                            color.g = 0.5f + t * 2.5f;
                             color.b = 1.0f;
-                        } else if (t < 0.35f) {
-                            float s = (t - 0.15f) / 0.2f;
-                            color.r = 0.85f + s * 0.15f;
-                            color.g = 0.92f + s * 0.08f;
+                        } else if (t < 0.25f) {
+                            // transition to bright blue
+                            float s = (t - 0.12f) / 0.13f;
+                            color.r = 0.65f + s * 0.35f;
+                            color.g = 0.8f + s * 0.2f;
                             color.b = 1.0f;
-                        } else if (t < 0.55f) {
-                            float s = (t - 0.35f) / 0.2f;
+                        } else if (t < 0.4f) {
+                            // blue-white
+                            float s = (t - 0.25f) / 0.15f;
                             color.r = 1.0f;
-                            color.g = 1.0f - s * 0.15f;
-                            color.b = 1.0f - s * 0.35f;
-                        } else if (t < 0.75f) {
-                            float s = (t - 0.55f) / 0.2f;
+                            color.g = 1.0f;
+                            color.b = 1.0f;
+                        } else if (t < 0.6f) {
+                            // yellow-orange
+                            float s = (t - 0.4f) / 0.2f;
                             color.r = 1.0f;
-                            color.g = 0.85f - s * 0.25f;
-                            color.b = 0.65f - s * 0.35f;
+                            color.g = 1.0f - s * 0.2f;
+                            color.b = 1.0f - s * 0.6f;
+                        } else if (t < 0.8f) {
+                            // deep red-orange
+                            float s = (t - 0.6f) / 0.2f;
+                            color.r = 1.0f;
+                            color.g = 0.8f - s * 0.4f;
+                            color.b = 0.4f - s * 0.3f;
                         } else {
-                            float s = (t - 0.75f) / 0.25f;
-                            color.r = 1.0f - s * 0.15f;
-                            color.g = 0.6f - s * 0.35f;
-                            color.b = 0.3f - s * 0.2f;
+                            // red-orange with some brown
+                            float s = (t - 0.8f) / 0.2f;
+                            color.r = 1.0f - s * 0.2f;
+                            color.g = 0.4f - s * 0.25f;
+                            color.b = 0.1f;
                         }
                         return color;
                     };
@@ -256,8 +268,10 @@ void renderBlackHoles(const std::vector<BlackHole>& blackHoles, const RenderZone
                             } else {
                                 float warp1 = (1.0f - t1) * (1.0f - t1);
                                 float warp2 = (1.0f - t2) * (1.0f - t2);
-                                yOffset1 = warp1 * innerRadius1 * 0.3f;
-                                yOffset2 = warp2 * innerRadius2 * 0.3f;
+                                float puff1 = (t1 > 0.6f) ? pow((t1 - 0.6f) / 0.4f, 1.5f) * 2.0f : 0.0f;
+                                float puff2 = (t2 > 0.6f) ? pow((t2 - 0.6f) / 0.4f, 1.5f) * 2.0f : 0.0f;
+                                yOffset1 = warp1 * innerRadius1 * 0.3f + puff1 * innerRadius1 * 0.15f;
+                                yOffset2 = warp2 * innerRadius2 * 0.3f + puff2 * innerRadius2 * 0.15f;
                             }
 
                             float dopplerFactor = 1.0f + 0.5f * cosA;
@@ -280,36 +294,94 @@ void renderBlackHoles(const std::vector<BlackHole>& blackHoles, const RenderZone
                 }
             }
 
-            if (bh.type == BlackHoleType::SUPERMASSIVE && highQuality) {
-                float jetLength = bh.accretionDiskOuterRadius * visualScale * 3.0f;
-                float jetWidth = bh.accretionDiskInnerRadius * visualScale * 0.4f;
+            if (bh.type == BlackHoleType::SUPERMASSIVE) {
+                if (highQuality) {
+                    int numMagneticLines = 8;
+                    float magneticRadius = bh.accretionDiskInnerRadius * visualScale * 2.5f;
+                    float magneticHeight = bh.accretionDiskOuterRadius * visualScale * 2.0f;
 
-                int jetLayers = 3;
-                int jetSegments = 16;
+                    glLineWidth(2.0f);
+                    for (int line = 0; line < numMagneticLines; line++) {
+                        float lineAngle = (line / (float)numMagneticLines) * 2.0f * (float)M_PI + bh.diskRotationAngle * 0.5f;
+                        float lineRadius = magneticRadius * (0.6f + 0.4f * (line % 2));
+
+                        glBegin(GL_LINE_STRIP);
+                        int arcSegments = 20;
+                        for (int seg = 0; seg <= arcSegments; seg++) {
+                            float t = seg / (float)arcSegments;
+                            float theta = t * (float)M_PI;
+
+                            float x = lineRadius * cos(lineAngle) * sin(theta);
+                            float y = magneticHeight * (0.5f - cos(theta) * 0.5f);
+                            float z = lineRadius * sin(lineAngle) * sin(theta);
+
+                            float alpha = sin(theta) * 0.7f;
+                            glColor4f(1.0f, 1.0f, 1.0f, alpha);
+                            glVertex3f(x, y, z);
+                        }
+                        glEnd();
+
+                        glBegin(GL_LINE_STRIP);
+                        for (int seg = 0; seg <= arcSegments; seg++) {
+                            float t = seg / (float)arcSegments;
+                            float theta = t * (float)M_PI;
+
+                            float x = lineRadius * cos(lineAngle) * sin(theta);
+                            float y = -magneticHeight * (0.5f - cos(theta) * 0.5f);
+                            float z = lineRadius * sin(lineAngle) * sin(theta);
+
+                            float alpha = sin(theta) * 0.7f;
+                            glColor4f(1.0f, 1.0f, 1.0f, alpha);
+                            glVertex3f(x, y, z);
+                        }
+                        glEnd();
+                    }
+                    glLineWidth(1.0f);
+                }
+
+                float jetLength = bh.accretionDiskOuterRadius * visualScale * 2.0f;
+                float jetWidth = bh.accretionDiskInnerRadius * visualScale * 0.25f;
+
+                int jetLayers, jetSegments;
+                if (highQuality) {
+                    jetLayers = 4;
+                    jetSegments = 24;
+                } else if (mediumQuality) {
+                    jetLayers = 3;
+                    jetSegments = 16;
+                } else {
+                    jetLayers = 2;
+                    jetSegments = 12;
+                }
+
                 for (int jetLayer = 0; jetLayer < jetLayers; jetLayer++) {
-                    float jetAlpha = (jetLayer == 0) ? 0.7f : (jetLayer == 1) ? 0.4f : 0.2f;
-                    float jetScale = 1.0f + (float)jetLayer * 0.3f;
+                    float jetAlpha = (jetLayer == 0) ? 0.9f : (jetLayer == 1) ? 0.6f : (jetLayer == 2) ? 0.3f : 0.15f;
+                    float jetScale = 1.0f + (float)jetLayer * 0.2f;
+
+                    float greenR = (jetLayer == 0) ? 0.2f : 0.3f;
+                    float greenG = (jetLayer == 0) ? 1.0f : 0.9f;
+                    float greenB = (jetLayer == 0) ? 0.4f : 0.5f;
 
                     glBegin(GL_TRIANGLE_FAN);
-                    glColor4f(0.5f, 0.75f, 1.0f, jetAlpha);
+                    glColor4f(greenR, greenG, greenB, jetAlpha);
                     glVertex3f(0.0f, jetLength * jetScale, 0.0f);
-                    glColor4f(0.5f, 0.75f, 1.0f, 0.0f);
+                    glColor4f(greenR * 0.5f, greenG * 0.5f, greenB * 0.5f, 0.0f);
                     for (int i = 0; i <= jetSegments; i++) {
                         float angle = (i / (float)jetSegments) * 2.0f * (float)M_PI;
                         glVertex3f(jetWidth * jetScale * cos(angle),
-                                   jetLength * 0.2f,
+                                   jetLength * 0.15f,
                                    jetWidth * jetScale * sin(angle));
                     }
                     glEnd();
 
                     glBegin(GL_TRIANGLE_FAN);
-                    glColor4f(0.5f, 0.75f, 1.0f, jetAlpha);
+                    glColor4f(greenR, greenG, greenB, jetAlpha);
                     glVertex3f(0.0f, -jetLength * jetScale, 0.0f);
-                    glColor4f(0.5f, 0.75f, 1.0f, 0.0f);
+                    glColor4f(greenR * 0.5f, greenG * 0.5f, greenB * 0.5f, 0.0f);
                     for (int i = 0; i <= jetSegments; i++) {
                         float angle = (i / (float)jetSegments) * 2.0f * (float)M_PI;
                         glVertex3f(jetWidth * jetScale * cos(angle),
-                                   -jetLength * 0.2f,
+                                   -jetLength * 0.15f, // More collimated base
                                    jetWidth * jetScale * sin(angle));
                     }
                     glEnd();
