@@ -193,51 +193,6 @@ void renderBlackHoles(const std::vector<BlackHole>& blackHoles, const RenderZone
 			}
 		}
 
-		// magnetic field lines
-		if (highQuality) {
-			int numMagneticLines = 8;
-			float magneticRadius = bh.accretionDiskInnerRadius * visualScale * 2.5f;
-			float magneticHeight = bh.accretionDiskOuterRadius * visualScale * 2.0f;
-
-			glLineWidth(2.0f);
-			for (int line = 0; line < numMagneticLines; line++) {
-				float lineAngle = (line / (float)numMagneticLines) * 2.0f * (float)M_PI + bh.diskRotationAngle * 0.5f;
-				float lineRadius = magneticRadius * (0.6f + 0.4f * (line % 2));
-
-				glBegin(GL_LINE_STRIP);
-				int arcSegments = 20;
-				for (int seg = 0; seg <= arcSegments; seg++) {
-					float t = seg / (float)arcSegments;
-					float theta = t * (float)M_PI;
-
-					float x = lineRadius * cos(lineAngle) * sin(theta);
-					float y = magneticHeight * (0.5f - cos(theta) * 0.5f);
-					float z = lineRadius * sin(lineAngle) * sin(theta);
-
-					float alpha = sin(theta) * 0.7f;
-					glColor4f(1.0f, 1.0f, 1.0f, alpha);
-					glVertex3f(x, y, z);
-				}
-				glEnd();
-
-				glBegin(GL_LINE_STRIP);
-				for (int seg = 0; seg <= arcSegments; seg++) {
-					float t = seg / (float)arcSegments;
-					float theta = t * (float)M_PI;
-
-					float x = lineRadius * cos(lineAngle) * sin(theta);
-					float y = -magneticHeight * (0.5f - cos(theta) * 0.5f);
-					float z = lineRadius * sin(lineAngle) * sin(theta);
-
-					float alpha = sin(theta) * 0.7f;
-					glColor4f(1.0f, 1.0f, 1.0f, alpha);
-					glVertex3f(x, y, z);
-				}
-				glEnd();
-			}
-			glLineWidth(1.0f);
-		}
-
 		// relativistic jets
 		float jetLength = bh.accretionDiskOuterRadius * visualScale * 2.0f;
 		float jetWidth = bh.accretionDiskInnerRadius * visualScale * 0.25f;
