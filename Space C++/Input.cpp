@@ -1,10 +1,12 @@
 #include "Input.h"
+#include "UI.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <random>
 
 static Camera* g_camera = nullptr;
 static MouseState* g_mouseState = nullptr;
+static UIState* g_uiState = nullptr;
 
 void setGlobalCamera(Camera* cam) {
 	g_camera = cam;
@@ -14,8 +16,14 @@ void setGlobalMouseState(MouseState* ms) {
 	g_mouseState = ms;
 }
 
+void setGlobalUIState(UIState* ui) {
+	g_uiState = ui;
+}
+
 void mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
 	if (!g_camera || !g_mouseState) return;
+
+	if (g_uiState && g_uiState->isVisible) return;
 
 	if (g_mouseState->firstMouse) {
 		g_mouseState->lastX = xpos;
@@ -39,15 +47,18 @@ void mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
 	if (!g_camera) return;
 
+	if (g_uiState && g_uiState->isVisible) return;
+
 	bool ctrlHeld = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-	                glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+		glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
 	g_camera->freeZoomMode = ctrlHeld;
 
 	double zoomFactor = 1.15;
 
 	if (yoffset > 0) {
 		g_camera->zoomLevel *= zoomFactor;
-	} else {
+	}
+	else {
 		g_camera->zoomLevel /= zoomFactor;
 	}
 

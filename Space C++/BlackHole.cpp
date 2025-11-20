@@ -1,5 +1,6 @@
 #include "BlackHole.h"
 #include "SolarSystem.h"
+#include "UI.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
@@ -25,7 +26,7 @@ void generateBlackHoles(std::vector<BlackHole>& blackHoles, const BlackHoleConfi
 		smbh.x = 0.0f;
 		smbh.y = 0.0f;
 		smbh.z = 0.0f;
-		smbh.mass = 4.3e6f;
+		smbh.mass = g_currentBlackHoleMass * 1e6f;
 
 		float rsKm = calculateSchwarzschildRadius(smbh.mass);
 		smbh.eventHorizonRadius = rsKm * KM_TO_SIM_UNITS * VISUAL_SCALE_FACTOR;

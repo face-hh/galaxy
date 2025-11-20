@@ -1,8 +1,9 @@
 #include "SolarSystem.h"
+#include "UI.h"
 #include <GLFW/glfw3.h>
-#include <iostream>
 #include <cmath>
-#include <vector>
+#include <iostream>
+#include <random>
 
 const PlanetData PLANET_DATA[NUM_PLANETS] = {
     {"Mercury", 0.39, 0.383, 0.7f, 0.7f, 0.7f},
@@ -38,13 +39,13 @@ RenderZone calculateRenderZone(const Camera &camera)
         double t = (camera.zoomLevel - GALAXY_ZOOM_MAX) / (SYSTEM_ZOOM_MIN - GALAXY_ZOOM_MAX);
         t = t * t * t; // Cubic easing
 
-        zone.solarSystemScaleMultiplier = 1.0 + (SYSTEM_SCALE_MULTIPLIER - 1.0) * t;
+        zone.solarSystemScaleMultiplier = 1.0 + (g_currentSolarSystemScale - 1.0) * t;
         zone.starBrightnessFade = 1.0;
         zone.renderOrbits = false;
     }
     else
     {
-        zone.solarSystemScaleMultiplier = SYSTEM_SCALE_MULTIPLIER;
+        zone.solarSystemScaleMultiplier = g_currentSolarSystemScale;
         zone.starBrightnessFade = 1.0;
         zone.renderOrbits = true;
     }

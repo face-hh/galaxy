@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClCompile Include="BlackHole.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="FontRenderer.cpp" />
     <ClCompile Include="GalacticGas.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\xxfac\Downloads\glad\include;C:\Users\xxfac\Downloads\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -142,15 +143,18 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SolarSystem.cpp" />
     <ClCompile Include="Stars.cpp" />
+    <ClCompile Include="UI.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlackHole.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="FontRenderer.h" />
     <ClInclude Include="GalacticGas.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="SolarSystem.h" />
     <ClInclude Include="Stars.h" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

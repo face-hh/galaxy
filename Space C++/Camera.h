@@ -15,6 +15,7 @@ struct Camera {
 };
 
 struct SolarSystem;
+struct UIState;
 
 void setupCamera(const Camera& camera, int width, int height, const SolarSystem& solarSystem);
-void processInput(struct GLFWwindow* window, Camera& camera);
+void processInput(struct GLFWwindow* window, Camera& camera, const UIState* uiState = nullptr);

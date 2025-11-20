@@ -9,6 +9,7 @@
 #include "BlackHole.h"
 #include "GalacticGas.h"
 #include "Input.h"
+#include "UI.h"
 
 int WIDTH = 1920;
 int HEIGHT = 1080;
@@ -43,7 +44,7 @@ BlackHoleConfig createDefaultBlackHoleConfig() {
 }
 
 void render(const std::vector<Star>& stars, const std::vector<BlackHole>& blackHoles,
-            const std::vector<GasCloud>& gasClouds, const Camera& camera) {
+	const std::vector<GasCloud>& gasClouds, const Camera& camera, UIState& uiState) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	setupCamera(camera, WIDTH, HEIGHT, solarSystem);
@@ -58,6 +59,8 @@ void render(const std::vector<Star>& stars, const std::vector<BlackHole>& blackH
 	if (solarSystem.isGenerated) {
 		renderSolarSystem(zone);
 	}
+
+	renderUI(uiState, WIDTH, HEIGHT);
 }
 
 int main() {
@@ -89,14 +92,27 @@ int main() {
 	BlackHoleConfig blackHoleConfig = createDefaultBlackHoleConfig();
 	std::vector<BlackHole> blackHoles;
 	generateBlackHoles(blackHoles, blackHoleConfig, galaxyConfig.seed,
-	                   galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
+		galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
 
 	GasConfig gasConfig = createDefaultGasConfig();
 	std::vector<GasCloud> gasClouds;
 	generateGalacticGas(gasClouds, gasConfig, galaxyConfig.seed,
-	                    galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
+		galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
 
 	generateSolarSystem();
+
+	initUI();
+	UIState uiState = {};
+	uiState.isVisible = false;
+	uiState.hoveredButton = -1;
+	uiState.activeInput = -1;
+	uiState.needsRegeneration = false;
+	uiState.tempBlackHoleMass = 4.3f;
+	uiState.tempSolarSystemScale = 500.0f;
+	uiState.tempTimeSpeed = 1.0f;
+	updateUIStateFromConfigs(uiState, galaxyConfig, gasConfig, blackHoleConfig);
+
+	setGlobalUIState(&uiState);
 
 	double lastTime = glfwGetTime();
 
@@ -106,13 +122,35 @@ int main() {
 		double deltaTime = currentTime - lastTime;
 		lastTime = currentTime;
 
-		updateStarPositions(stars, deltaTime);
-		updateBlackHoles(blackHoles, deltaTime);
-		updateGalacticGas(gasClouds, deltaTime);
-		updatePlanets(deltaTime);
+		double adjustedDeltaTime = deltaTime * g_currentTimeSpeed;
 
-		processInput(window, camera);
-		render(stars, blackHoles, gasClouds, camera);
+		updateStarPositions(stars, adjustedDeltaTime);
+		updateBlackHoles(blackHoles, adjustedDeltaTime);
+		updateGalacticGas(gasClouds, adjustedDeltaTime);
+		updatePlanets(adjustedDeltaTime);
+
+		handleUIInput(window, uiState);
+
+		if (uiState.needsRegeneration) {
+			applyUIChangesToConfigs(uiState, galaxyConfig, gasConfig, blackHoleConfig);
+
+			stars.clear();
+			generateStarField(stars, galaxyConfig);
+
+			blackHoles.clear();
+			generateBlackHoles(blackHoles, blackHoleConfig, galaxyConfig.seed,
+				galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
+
+			gasClouds.clear();
+			generateGalacticGas(gasClouds, gasConfig, galaxyConfig.seed,
+				galaxyConfig.diskRadius, galaxyConfig.bulgeRadius);
+
+			std::cout << "Galaxy regenerated with new parameters" << std::endl;
+			uiState.needsRegeneration = false;
+		}
+
+		processInput(window, camera, &uiState);
+		render(stars, blackHoles, gasClouds, camera, uiState);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

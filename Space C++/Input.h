@@ -10,6 +10,8 @@ struct MouseState {
     bool firstMouse;
 };
 
+struct UIState;
+
 void initInput(struct GLFWwindow* window, Camera& camera, MouseState& mouseState);
 
 void mouseMoveCallback(struct GLFWwindow* window, double xpos, double ypos);
@@ -18,3 +20,4 @@ void keyCallback(struct GLFWwindow* window, int key, int scancode, int action, i
 
 void setGlobalCamera(Camera* cam);
 void setGlobalMouseState(MouseState* ms);
+void setGlobalUIState(UIState* ui);

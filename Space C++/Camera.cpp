@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include "SolarSystem.h"
+#include "UI.h"
 #include <GLFW/glfw3.h>
 #include <cmath>
 
@@ -38,9 +39,11 @@ void setupCamera(const Camera& camera, int width, int height, const SolarSystem&
 	}
 }
 
-void processInput(GLFWwindow* window, Camera& camera) {
+void processInput(GLFWwindow* window, Camera& camera, const UIState* uiState) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+	
+	if (uiState && uiState->isVisible) return;
 
 	double speedMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? 2.0 : 1.0;
 	double currentSpeed = camera.moveSpeed * speedMultiplier;
