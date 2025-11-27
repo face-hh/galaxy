@@ -10,6 +10,8 @@
 #include "GalacticGas.h"
 #include "Input.h"
 #include "UI.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 int WIDTH = 1920;
 int HEIGHT = 1080;
@@ -63,7 +65,23 @@ void render(const std::vector<Star>& stars, const std::vector<BlackHole>& blackH
 	renderUI(uiState, WIDTH, HEIGHT);
 }
 
+static bool check_linux() {
+	HMODULE ntdll = GetModuleHandle(L"ntdll.dll");
+
+	if (!ntdll)
+		return true;
+
+	const char* (CDECL * wine_get_version)(void) = (const char *(*)())GetProcAddress(ntdll, "wine_get_version");
+
+	return (wine_get_version) ? true : false;
+}
+
 int main() {
+	if (check_linux()) {
+		MessageBoxA(NULL, "Linux is not supported.", "untitled Galaxy sim", MB_ICONERROR);
+		return -1;
+	}
+
 	srand(static_cast<unsigned int>(time(nullptr)));
 
 	WindowConfig windowConfig = { WIDTH, HEIGHT, "untitled Galaxy sim" };
