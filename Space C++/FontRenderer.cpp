@@ -7,9 +7,10 @@
 #endif
 
 namespace FontRenderer {
+#ifdef _WIN32
 	static GLuint fontBase = 0;
 	static HDC hDC = nullptr;
-
+#endif
 	void initFont() {
 #ifdef _WIN32
 		fontBase = glGenLists(256);

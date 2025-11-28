@@ -48,6 +48,12 @@ You'll need to download and set up the following libraries:
 4. Choose **Debug** or **Release** configuration
 5. Build and run (F5)
 
+## Build Linux
+
+1. `cmake -S . -B build && cd build`
+2. `make`
+3. `./SpaceCpp`
+
 ## Configuration
 
 The simulation can be configured through the UI (press TAB to toggle) or by modifying `createDefaultGalaxyConfig()` in `main.cpp`:
@@ -70,7 +76,7 @@ config.rotationSpeed = 1.0;
 
 ## Platform Support
 - **Windows** ✅
-- **Linux** 🖕
+- **Linux** ✅
 - **MacOS** 🫰❌0️⃣0️⃣0️⃣🫵😂 [download](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSziL_UbSIwkRr35AS4NW_Y6LsV4_Svlp4u_w&s)
 
 ## License
